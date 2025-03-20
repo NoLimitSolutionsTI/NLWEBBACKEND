@@ -1,0 +1,6 @@
+@NLBackend_HostAddress = http://localhost:5180
+
+GET {{NLBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
