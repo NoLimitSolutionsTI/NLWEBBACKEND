@@ -41,6 +41,7 @@ namespace NLBackend.Services
         {
             await _nlCollection.InsertOneAsync(newContact);
 
+            /*
             // Si no viene email, no se envia la notificación
             if (string.IsNullOrWhiteSpace(newContact.Email))
                 return;
@@ -68,7 +69,7 @@ namespace NLBackend.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[Email] Error enviando al contacto: {ex.Message}");
-            }
+            }*/
         }
     }
 }
