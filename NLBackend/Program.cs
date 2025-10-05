@@ -42,6 +42,14 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // ======================================================
+// BUILD DEL SMTP
+// ======================================================
+
+builder.Services.Configure<SmtpSettings>(
+    builder.Configuration.GetSection("Smtp"));
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+
+// ======================================================
 // CONFIGURACIÓN DEL PIPELINE HTTP
 // ======================================================
 
