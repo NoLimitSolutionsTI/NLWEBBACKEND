@@ -1,23 +1,27 @@
-# Etapa 1: Build
+# Etapa 1: build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia todo el proyecto
+# Copiamos solo el csproj primero para aprovechar la cache
+COPY NLBackend.csproj ./
+RUN dotnet restore NLBackend.csproj
+
+# Ahora copiamos el resto del código
 COPY . .
+RUN dotnet publish NLBackend.csproj -c Release -o /app
 
-# Restaura dependencias y publica la app (genera archivos en /app/publish)
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
-
-# Etapa 2: Runtime
+# Etapa 2: runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Copia los archivos publicados desde la etapa anterior
-COPY --from=build /app/publish .
+# Render inyecta PORT; forzamos a escuchar en ese puerto vía env
+ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT}
+# (Opcional) Asegura entorno de producción
+ENV ASPNETCORE_ENVIRONMENT=Production
 
-# Expone el puerto (ajusta si usas otro)
-EXPOSE 80
+COPY --from=build /app ./
 
-# Comando de inicio
+# EXPOSE es informativo; 8080 es el valor típico, PORT real lo pone Render
+EXPOSE 8080
+
 ENTRYPOINT ["dotnet", "NLBackend.dll"]
