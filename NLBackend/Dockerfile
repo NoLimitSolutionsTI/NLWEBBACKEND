@@ -1,23 +1,27 @@
-# Etapa 1: build
+# Etapa 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copiamos el .csproj (ya está dentro del contexto)
-COPY NLBackend.csproj ./
-RUN dotnet restore NLBackend.csproj
-
-# Copiamos el resto del código
+# Copia todo el proyecto (como el original)
 COPY . .
-RUN dotnet publish NLBackend.csproj -c Release -o /app
 
-# Etapa 2: runtime
+# Restaura y publica
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app/publish
+
+# Etapa 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Render inyecta PORT automáticamente
+# Render inyecta PORT; hacemos que Kestrel escuche ahí
 ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT}
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-COPY --from=build /app ./
+# Copia el output publicado
+COPY --from=build /app/publish .
+
+# EXPOSE es informativo; Render hace proxy al $PORT
 EXPOSE 8080
+
+# EntryPoint (igual que tu original)
 ENTRYPOINT ["dotnet", "NLBackend.dll"]

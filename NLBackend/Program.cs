@@ -3,11 +3,19 @@ using NLBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1) Asegura que la app escuche en el puerto que Render inyecta
+// ======================================================
+// CONFIGURACIÓN DEL SERVIDOR Y PUERTO
+// ======================================================
+
+// Render inyecta el puerto mediante la variable de entorno PORT
+// Si no existe (por ejemplo, al correr localmente), usa 8080 por defecto.
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// Add services
+// ======================================================
+// REGISTRO DE SERVICIOS
+// ======================================================
+
 builder.Services.Configure<NLWebDatabaseSettings>(
     builder.Configuration.GetSection("NLWebDatabase"));
 
@@ -27,19 +35,29 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ======================================================
+// CONSTRUCCIÓN DE LA APLICACIÓN
+// ======================================================
+
 var app = builder.Build();
 
-// Swagger en Dev (déjalo así o habilítalo también en Prod si quieres)
-if (app.Environment.IsDevelopment())
+// ======================================================
+// CONFIGURACIÓN DEL PIPELINE HTTP
+// ======================================================
+
+// Habilita Swagger solo en Development o en Render (para debugging)
+var runningOnRender = Environment.GetEnvironmentVariable("RENDER") == "true";
+
+if (app.Environment.IsDevelopment() || runningOnRender)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Configuración de CORS
 app.UseCors("AllowReactApp");
 
-// 2) Evita forzar HTTPS dentro del contenedor en Render
-var runningOnRender = Environment.GetEnvironmentVariable("RENDER") == "true";
+// Render ya maneja HTTPS externamente, por lo tanto evitamos la redirección interna
 if (!runningOnRender)
 {
     app.UseHttpsRedirection();
@@ -47,9 +65,17 @@ if (!runningOnRender)
 
 app.UseAuthorization();
 
+// ======================================================
+// ENDPOINTS
+// ======================================================
+
 app.MapControllers();
 
-// 3) Endpoint de health para Render
+// Health Check para Render (responde 200 OK)
 app.MapGet("/health", () => Results.Ok("OK"));
+
+// ======================================================
+// EJECUCIÓN
+// ======================================================
 
 app.Run();
